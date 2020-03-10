@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using DotLiquid.Exceptions;
 using NUnit.Framework;
@@ -260,6 +261,64 @@ namespace DotLiquid.Tests
             _context["name"] = "King Kong";
             _context.AddFilters(typeof(ContextFilters));
             Assert.AreEqual(" King Kong has 1000$ ", new Variable("var | bank_statement").Render(_context));
+        }
+
+        [Test]
+        public void TestGroupBy()
+        {
+            _context["value"] = 3;
+            _context["numbers"] = new[] {2, 1, 4, 3, 1};
+            _context["items"] = new[] {new {a = 1, group = 1, subgroup = 1}, new {a = 2, group = 1, subgroup = 1}, new {a = 3, group = 1, subgroup = 2}, new {a = 4, group = 2, subgroup = 2}};
+
+            CollectionAssert.AreEqual(new Dictionary<int, IEnumerable<int>>() {{4, new List<int> {4}}, {3, new List<int> {3}}, {2, new List<int> {2}}, {1, new List<int> {1, 1}}},
+                new Variable("numbers | group_by:''").Render(_context) as IDictionary<object, IEnumerable<object>>);
+
+            CollectionAssert.AreEqual(new Dictionary<int, IEnumerable<int>>() {{3, new List<int> {3}}}, new Variable("value | group_by:''").Render(_context) as IDictionary<object, IEnumerable<object>>);
+
+            var groupedExpected = new Dictionary<object, IEnumerable<object>>()
+            {
+                {
+                    1, new List<object>() {new {a = 1, group = 1, subgroup = 1}, new {a = 2, group = 1, subgroup = 1}, new {a = 3, group = 1, subgroup = 2}}
+                },
+                {
+                    2, new List<object>() {new {a = 4, group = 2, subgroup = 2}}
+                }
+            };
+
+            var groupedResult = new Variable("items | group_by:'group'").Render(_context) as IDictionary<object, IEnumerable<object>>;
+
+            CollectionAssert.AreEqual(groupedExpected, groupedResult);
+
+            var subGroupedExpected = new Dictionary<object, IDictionary<object, IEnumerable<object>>>()
+            {
+                {
+                    1, new Dictionary<object, IEnumerable<object>>()
+                    {
+                        {1, new List<object>() {new {a = 1, group = 1, subgroup = 1}, new {a = 2, group = 1, subgroup = 1}}},
+
+                        {2, new List<object>() {new {a = 3, group = 1, subgroup = 2}}}
+                    }
+                },
+                {
+                    2, new Dictionary<object, IEnumerable<object>>()
+                    {
+
+
+                        {2, new List<object>() {new {a = 4, group = 2, subgroup = 2}}}
+                    }
+                },
+            };
+
+            var subGroupedResult = new Dictionary<object, IDictionary<object, IEnumerable<object>>>();
+
+            foreach (var group in groupedResult)
+            {
+                _context["group"] = group.Value;
+                var subGrouped = new Variable("group | group_by:'subgroup'").Render(_context) as IDictionary<object, IEnumerable<object>>;
+                subGroupedResult.Add(group.Key, subGrouped);
+            }
+
+            CollectionAssert.AreEqual(subGroupedExpected, subGroupedResult);
         }
     }
 }

@@ -786,6 +786,45 @@ namespace DotLiquid
             ary.RemoveAll(item => item == null);
             return ary;
         }
+
+
+        /// <summary>
+        /// Group elements of the array
+        /// provide key property
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        public static IDictionary<object, IEnumerable<object>> GroupBy(object input, string property)
+        {
+            if (input == null)
+                return new Dictionary<object, IEnumerable<object>>();
+
+            IEnumerable<object> ary;
+
+            if (input is IEnumerable enumerableInput)
+                ary = enumerableInput.Flatten().Cast<object>().ToList();
+            else
+            {
+                ary = new List<object>(new[] {input});
+            }
+
+            if (!ary.Any())
+            {
+                return new Dictionary<object, IEnumerable<object>>();
+            }
+
+            if (string.IsNullOrEmpty(property))
+            {
+                return ary.GroupBy(x => x).ToDictionary(x => x.Key, x => x.AsEnumerable());
+            }
+            else if (ary.All(o => o.RespondTo(property)))
+            {
+                return ary.GroupBy(x => x.GetType().GetRuntimeProperty((string) property).GetValue(x, null)).ToDictionary(x => x.Key, x => x.AsEnumerable());
+            }
+
+            return new Dictionary<object, IEnumerable<object>>();
+        }
     }
 
     internal static class StringExtensions

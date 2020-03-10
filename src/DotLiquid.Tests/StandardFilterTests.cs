@@ -656,5 +656,15 @@ namespace DotLiquid.Tests
             CollectionAssert.AreEqual(new string[] { }, StandardFilters.Compact(new string[] { }));
             Assert.AreEqual(null, StandardFilters.Compact(null));
 		}
+
+        [Test]
+        public void TestGroupBy()
+        {
+            CollectionAssert.AreEqual(new Dictionary<object, IEnumerable<object>>(), StandardFilters.GroupBy(null, string.Empty));
+            CollectionAssert.AreEqual(new Dictionary<object, IEnumerable<object>>(), StandardFilters.GroupBy(new string[] { }, String.Empty));
+            CollectionAssert.AreEqual(new Dictionary<int, IEnumerable<int>>() {{4, new List<int> {4}}, {3, new List<int> {3}}, {2, new List<int> {2}}, {1, new List<int> {1, 1}}}, StandardFilters.GroupBy(new[] {4, 3, 2, 1, 1}, String.Empty));
+            CollectionAssert.AreEqual(new Dictionary<int, IEnumerable<object>>() {{1, new List<object> {new {a = 1, group = 1}, new {a = 2, group = 1}, new {a = 3, group = 1}}}, {2, new List<object> {new {a = 4, group = 2}}}},
+                StandardFilters.GroupBy(new[] {new {a = 1, group = 1}, new {a = 2, group = 1}, new {a = 3, group = 1}, new {a = 4, group = 2}}, "group"));
+        }
     }
 }
